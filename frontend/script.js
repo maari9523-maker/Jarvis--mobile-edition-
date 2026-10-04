@@ -1,134 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S Brain Test</title>
-
-<style>
-body{
-  background:#000;
-  color:#0ff;
-  font-family:monospace;
-  padding:20px
+async function callGemini(p){ let lastErr;
+for(const m of MODELS){
+try{
+const res=await fetch(
+"https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="
++API_KEY,
+{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({contents:[{parts:[{text:p}]}]})});
+const data=await res.json();
+if(data.error){
+lastErr=new Error(data.error.message);
+if(/high demand|temporar|quota|rate|unavailable|no longer
+available|deprecated/i.test(data.error.message)) continue;
+throw lastErr;
 }
-
-h1{
-  text-align:center;
-  letter-spacing:4px
+return data.candidates[0].content.parts[0].text;
+}catch(e){ lastErr=e; }
 }
-
-#status{
-  color:#f00;
-  text-align:center;
-  margin-bottom:15px;
-  font-weight:bold
+throw lastErr;
 }
-
-textarea{
-  width:100%;
-  background:#001a1a;
-  color:#0ff;
-  border:1px solid #0ff;
-  padding:10px;
-  box-sizing:border-box
+async function askGemini(p){
+add('J.A.R.V.I.S: Thinking...','ai');
+try{
+const reply=await callGemini(p);
+chat.lastChild.innerText='J.A.R.V.I.S: '+reply;
+speak(reply); // reply వచ్చి న వెంటనేVOICE
+}catch(e){
+chat.lastChild.innerText='J.A.R.V.I.S: ERROR - '+e.message;
 }
-
-button{
-  width:100%;
-  padding:14px;
-  background:#0ff;
-  color:#000;
-  font-weight:bold;
-  border:none;
-  margin-top:10px;
-  font-size:16px
 }
-
-#reply{
-  border:1px solid #0ff;
-  padding:12px;
-  margin-top:15px;
-  min-height:100px;
-  white-space:pre-wrap;
-  color:#fff
-}
-</style>
-</head>
-
-<body>
-
-<h1>J.A.R.V.I.S</h1>
-
-<div id="status">BRAIN: NOT CONNECTED</div>
-
-<textarea id="prompt" rows="4">Hello J.A.R.V.I.S</textarea>
-
-<button onclick="ask()">SEND REQUEST</button>
-
-<div id="reply">Waiting for response...</div>
-
-<script>
-
-// PASTE YOUR API KEY BELOW
-const API_KEY = " ";
-
-async function ask(){
-
-  document.getElementById("reply").innerText = "PROCESSING...";
-  document.getElementById("status").innerText = "CONNECTING...";
-
-  try{
-
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + API_KEY,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":"application/json"
-        },
-        body: JSON.stringify({
-          contents:[
-            {
-              parts:[
-                {
-                  text: document.getElementById("prompt").value
-                }
-              ]
-            }
-          ]
-        })
-      }
-    );
-
-    const data = await res.json();
-
-    if(data.candidates && data.candidates[0]){
-
-      document.getElementById("reply").innerText =
-        data.candidates[0].content.parts[0].text;
-
-      document.getElementById("status").innerText = "✓ BRAIN ONLINE";
-      document.getElementById("status").style.color = "#0f0";
-
-    }else{
-
-      document.getElementById("reply").innerText =
-        "ERROR: " + JSON.stringify(data);
-
-    }
-
-  }catch(e){
-
-    document.getElementById("reply").innerText =
-      "NETWORK ERROR: " + e.message;
-
-    document.getElementById("status").innerText =
-      "CONNECTION FAILED";
-  }
-}
-
-</script>
-
-</body>
-</html>
